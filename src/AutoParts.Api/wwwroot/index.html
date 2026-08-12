@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AutoParts · Amostras de anúncios</title>
+  <link rel="stylesheet" href="/site.css">
+</head>
+<body>
+  <main>
+    <header>
+      <p class="eyebrow">AUTOPARTS / ANÚNCIOS TÉCNICOS</p>
+      <h1>Gere uma amostra pelo Part Number</h1>
+      <p class="intro">Modelo de anúncio e linha de planilha. Confirme a aplicação no RealOEM antes de publicar.</p>
+    </header>
+
+    <form id="search-form">
+      <label for="oem">Part Number / código OEM</label>
+      <div class="search-row">
+        <input id="oem" name="oem" value="41007293806" autocomplete="off" required>
+        <button type="submit">Gerar anúncio</button>
+        <button id="ai-button" type="button">IA revisar e sugerir</button>
+      </div>
+      <small>Exemplo: 41007293806</small>
+    </form>
+
+    <p id="status" role="status"></p>
+    <section id="result" hidden>
+      <div class="layout">
+        <article class="car-card">
+          <img id="vehicle-image" alt="BMW Série 1 F20 hatchback">
+          <p>Imagem de referência do veículo · BMW F20</p>
+        </article>
+        <article class="ad-card">
+          <p class="eyebrow">AMOSTRA DE ANÚNCIO</p>
+          <h2 id="title"></h2>
+          <dl>
+            <div><dt>Cód. OEM</dt><dd id="part-number"></dd></div>
+            <div><dt>Valor sugerido</dt><dd id="price"></dd></div>
+            <div><dt>Palavras-chave</dt><dd id="keywords"></dd></div>
+            <div><dt>Aplicações</dt><dd id="applications"></dd></div>
+            <div><dt>Fonte cadastrada</dt><dd id="source"></dd></div>
+          </dl>
+          <a id="realoem" target="_blank" rel="noreferrer">Conferir veículo no RealOEM</a>
+          <p id="verification" class="verification"></p>
+        </article>
+      </div>
+
+      <section id="generated-images" class="sheet" hidden>
+        <h2>Imagens geradas para o anúncio</h2>
+        <div class="generated-grid"><figure><img id="primary-image" alt="Imagem principal do anúncio"><figcaption>Imagem 1 · fundo branco</figcaption></figure><figure><img id="technical-image" alt="Imagem técnica de compatibilidade"><figcaption>Imagem 2 · aplicações</figcaption></figure></div>
+      </section>
+
+      <section class="sheet">
+        <h2>Linha para planilha</h2>
+        <div class="table-wrap"><table>
+          <thead><tr><th>DATA</th><th>COD. OEM</th><th>TÍTULO</th><th>VALOR SUGERIDO</th><th>GRUPO DE PALAVRAS CHAVES</th><th>APLICAÇÕES</th></tr></thead>
+          <tbody id="sheet-row"></tbody>
+        </table></div>
+      </section>
+      <section id="description-panel" class="sheet" hidden>
+        <div class="section-heading"><h2>Descrição do anúncio</h2><button id="copy-description" type="button">Copiar texto</button></div>
+        <textarea id="listing-description" readonly aria-label="Descrição gerada"></textarea>
+        <p id="description-note" class="verification"></p>
+      </section>
+      <div class="send-area">
+        <button id="send-prelisting" type="button">Enviar<br><span>Pré Anúncio · Drive Parts</span></button>
+        <p id="send-status" role="status"></p>
+      </div>
+    </section>
+  </main>
+  <script src="/site.js"></script>
+</body>
+</html>
