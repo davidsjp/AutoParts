@@ -20,7 +20,7 @@
         <input id="oem" name="oem" value="41007293806" autocomplete="off" required>
         <button type="submit">Gerar anúncio</button>
         <button id="ai-button" type="button">IA revisar e sugerir</button>
-        <button id="realoem-button" type="button">RealOEM + copiar OEM</button>
+        <button id="realoem-button" type="button">Consultar e importar RealOEM</button>
       </div>
       <small>Exemplo: 41007293806</small>
     </form>
@@ -70,6 +70,19 @@
       </div>
     </section>
   </main>
+  <dialog id="realoem-dialog">
+    <form id="realoem-import-form">
+      <div class="section-heading"><h2>Importar dados do RealOEM</h2><button id="close-realoem" type="button">Fechar</button></div>
+      <p>O RealOEM foi aberto em outra janela com o OEM copiado. Pesquise o código, copie os dados e cole abaixo.</p>
+      <label for="realoem-data">Dados copiados do RealOEM</label>
+      <textarea id="realoem-data" required placeholder="Cole aqui a descrição, aplicação, modelos e anos copiados do RealOEM"></textarea>
+      <label for="realoem-description">Descrição da peça (opcional)</label>
+      <input id="realoem-description" placeholder="Ex.: Máquina de vidro dianteira direita">
+      <label for="realoem-applications">Aplicações tratadas (opcional)</label>
+      <textarea id="realoem-applications" placeholder="BMW Série 1 F20/F21 116i, 118i... 2011 a 2019"></textarea>
+      <button type="submit">Importar dados e gerar anúncio</button>
+    </form>
+  </dialog>
   <script src="/site.js"></script>
 </body>
 </html>

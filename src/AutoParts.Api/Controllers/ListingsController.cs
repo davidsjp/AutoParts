@@ -74,7 +74,7 @@ public sealed class ListingsController(AutoPartsDbContext db, IListingGeneration
     }
 
     [HttpPost("{oemPartNumber}/images")]
-    public async Task<ActionResult<ListingImagesResponse>> GenerateImages(string oemPartNumber, CancellationToken ct)
+    public async Task<ActionResult<ListingImagesResponse>> GenerateImages(string oemPartNumber, [FromQuery] bool regenerate, CancellationToken ct)
     {
         var normalized = new string(oemPartNumber.Where(char.IsLetterOrDigit).ToArray()).ToUpperInvariant();
         var part = await db.Parts.AsNoTracking().FirstOrDefaultAsync(x => x.OemPartNumber == normalized, ct);
@@ -82,7 +82,7 @@ public sealed class ListingsController(AutoPartsDbContext db, IListingGeneration
         var models = await db.PartCompatibilities.AsNoTracking().Where(x => x.PartId == part.Id)
             .Include(x => x.Vehicle).Select(x => x.Vehicle.Model).Distinct().ToListAsync(ct);
         if (models.Count == 0) models = new[] { "116i", "118i", "120i", "125i" }.Where(part.Applications.Contains).ToList();
-        return Ok(await listingImages.GenerateAsync(new ListingImageRequest(part.OemPartNumber, part.Description, part.Applications, models), ct));
+        return Ok(await listingImages.GenerateAsync(new ListingImageRequest(part.OemPartNumber, part.Description, part.Applications, models, regenerate), ct));
     }
 
     [HttpPost("{oemPartNumber}/description")]

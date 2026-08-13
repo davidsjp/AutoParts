@@ -10,23 +10,23 @@ public sealed class OpenAiListingImageService(HttpClient httpClient, IConfigurat
     public async Task<ListingImagesResponse> GenerateAsync(ListingImageRequest input, CancellationToken ct)
     {
         // Amostras aprovadas manualmente: servidas localmente sem uma nova cobrança de geração.
-        if (input.OemPartNumber.Equals("51337294828", StringComparison.OrdinalIgnoreCase))
+        if (!input.ForceRegenerate && input.OemPartNumber.Equals("51337294828", StringComparison.OrdinalIgnoreCase))
             return new ListingImagesResponse(
                 "/images/principal-maquina-vidro-bmw-f20-f21-sem-texto.png",
                 "/images/amostra-maquina-vidro-bmw-f20-f21.png");
-        if (input.OemPartNumber.Equals("51778051948", StringComparison.OrdinalIgnoreCase))
+        if (!input.ForceRegenerate && input.OemPartNumber.Equals("51778051948", StringComparison.OrdinalIgnoreCase))
             return new ListingImagesResponse(
                 "/images/principal-spoiler-lateral-bmw-f22-f23.png",
                 "/images/tecnica-spoiler-lateral-bmw-f22-f23.png");
-        if (input.OemPartNumber.Equals("51217202146", StringComparison.OrdinalIgnoreCase))
+        if (!input.ForceRegenerate && input.OemPartNumber.Equals("51217202146", StringComparison.OrdinalIgnoreCase))
             return new ListingImagesResponse(
                 "/images/principal-fechadura-porta-bmw-f20-f21.png",
                 "/images/tecnica-fechadura-porta-bmw-f20-f21.png");
-        if (input.OemPartNumber.Equals("51167366308", StringComparison.OrdinalIgnoreCase))
+        if (!input.ForceRegenerate && input.OemPartNumber.Equals("51167366308", StringComparison.OrdinalIgnoreCase))
             return new ListingImagesResponse(
                 "/images/principal-retrovisor-bmw-f20-f21.png",
                 "/images/tecnica-retrovisor-bmw-f20-f21.png");
-        if (input.OemPartNumber.Equals("51327294830", StringComparison.OrdinalIgnoreCase))
+        if (!input.ForceRegenerate && input.OemPartNumber.Equals("51327294830", StringComparison.OrdinalIgnoreCase))
             return new ListingImagesResponse(
                 "/images/principal-vidro-porta-bmw-f20-f21.png",
                 "/images/tecnica-vidro-porta-bmw-f20-f21.png");
@@ -41,7 +41,7 @@ public sealed class OpenAiListingImageService(HttpClient httpClient, IConfigurat
         Directory.CreateDirectory(directory);
         var cachedPrimary = Directory.GetFiles(directory, "principal-*.png").OrderByDescending(File.GetLastWriteTimeUtc).FirstOrDefault();
         var cachedTechnical = Directory.GetFiles(directory, "tecnica-*.png").OrderByDescending(File.GetLastWriteTimeUtc).FirstOrDefault();
-        if (cachedPrimary is not null && cachedTechnical is not null)
+        if (!input.ForceRegenerate && cachedPrimary is not null && cachedTechnical is not null)
             return new ListingImagesResponse($"/generated/{folderName}/{Path.GetFileName(cachedPrimary)}", $"/generated/{folderName}/{Path.GetFileName(cachedTechnical)}");
         var stamp = DateTimeOffset.UtcNow.ToString("yyyyMMddHHmmss");
         var primaryFile = $"principal-{stamp}.png";
