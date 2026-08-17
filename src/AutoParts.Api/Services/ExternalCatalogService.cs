@@ -133,7 +133,7 @@ public sealed class ExternalCatalogService(
         BulkVehicleImportRequest request,
         CancellationToken ct)
     {
-        if (request.CompatibilityEnd < request.CompatibilityStart)
+        if (request.CompatibilityEnd.HasValue && request.CompatibilityEnd < request.CompatibilityStart)
             throw new ApiException(400, "CompatibilityEnd must be on or after CompatibilityStart.");
 
         var run = new ImportRun
@@ -185,7 +185,9 @@ public sealed class ExternalCatalogService(
             var existingParts = await db.Parts.ToDictionaryAsync(x => x.OemPartNumber, StringComparer.OrdinalIgnoreCase, ct);
             var newParts = new List<Part>();
             var now = DateTimeOffset.UtcNow;
-            var application = $"BMW {request.Chassis} {request.Model} {request.CompatibilityStart.Year} a {request.CompatibilityEnd.Year}";
+            var application = request.CompatibilityEnd.HasValue
+                ? $"BMW {request.Chassis} {request.Model} {request.CompatibilityStart.Year} a {request.CompatibilityEnd.Value.Year}"
+                : $"BMW {request.Chassis} {request.Model} a partir de {request.CompatibilityStart.Year} (fim de produção a confirmar)";
             foreach (var sourcePart in validParts)
             {
                 var oem = NormalizeOem(sourcePart.PartNumberClean);

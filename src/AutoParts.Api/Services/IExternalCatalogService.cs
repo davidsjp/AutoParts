@@ -37,7 +37,7 @@ public sealed record BulkVehicleImportRequest(
     int ModelYear,
     DateOnly ProductionDate,
     DateOnly CompatibilityStart,
-    DateOnly CompatibilityEnd,
+    DateOnly? CompatibilityEnd,
     string Market,
     string TypeCode);
 
