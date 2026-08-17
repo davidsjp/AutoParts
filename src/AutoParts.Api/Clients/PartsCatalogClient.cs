@@ -30,8 +30,18 @@ public sealed class PartsCatalogClient(HttpClient httpClient) : IPartsCatalogCli
 
     public async Task<IReadOnlyList<ExternalCarPart>> GetCarPartsAsync(int carId, CancellationToken cancellationToken = default)
     {
-        var page = await httpClient.GetFromJsonAsync<ExternalCarPartsPage>(
-            $"api/cars/{carId}/parts?limit=10000&offset=0", cancellationToken);
-        return page?.Parts ?? [];
+        const int pageSize = 5_000;
+        var offset = 0;
+        var allParts = new List<ExternalCarPart>();
+        while (true)
+        {
+            var page = await httpClient.GetFromJsonAsync<ExternalCarPartsPage>(
+                $"api/cars/{carId}/parts?limit={pageSize}&offset={offset}", cancellationToken);
+            if (page is null || page.Parts.Count == 0) break;
+            allParts.AddRange(page.Parts);
+            offset += page.Parts.Count;
+            if (offset >= page.Total || page.Parts.Count < pageSize) break;
+        }
+        return allParts;
     }
 }
