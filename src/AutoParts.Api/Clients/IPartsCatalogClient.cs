@@ -45,7 +45,8 @@ public sealed record ExternalCar(
     string? BodyType,
     string? TypeCode,
     int TotalParts,
-    string ScrapeStatus);
+    string ScrapeStatus,
+    string? ImageUrl = null);
 
 public sealed record ExternalCarPart(
     long Id,

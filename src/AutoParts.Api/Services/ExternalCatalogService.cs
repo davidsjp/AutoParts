@@ -9,6 +9,7 @@ namespace AutoParts.Api.Services;
 public sealed class ExternalCatalogService(
     IPartsCatalogClient client,
     IPartTranslationService translator,
+    MarketPartNameNormalizer marketNameNormalizer,
     AutoPartsDbContext db) : IExternalCatalogService
 {
     public Task<IReadOnlyList<CatalogSearchResult>> SearchAsync(string query, CancellationToken ct) =>
@@ -192,13 +193,18 @@ public sealed class ExternalCatalogService(
             {
                 var oem = NormalizeOem(sourcePart.PartNumberClean);
                 if (existingParts.ContainsKey(oem)) continue;
+                var marketDescription = marketNameNormalizer.Normalize(sourcePart.Description);
                 var part = new Part
                 {
                     OemPartNumber = oem,
-                    Description = sourcePart.Description.Trim(),
-                    Category = sourcePart.CategoryName?.Trim() ?? "BMV.parts",
+                    Description = marketDescription,
+                    Category = marketNameNormalizer.ShouldIgnoreForCommercialCatalog(marketDescription)
+                        ? "Ignorar - fixadores e mangueiras"
+                        : string.IsNullOrWhiteSpace(sourcePart.CategoryName)
+                        ? "Sem categoria (revisar)"
+                        : sourcePart.CategoryName.Trim(),
                     Source = "BMV.parts",
-                    KeywordGroup = $"{sourcePart.Description} {oem}".ToLowerInvariant(),
+                    KeywordGroup = $"{marketDescription} {oem}".ToLowerInvariant(),
                     Applications = application,
                     CreatedAt = now,
                     UpdatedAt = now

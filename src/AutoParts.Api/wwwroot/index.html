@@ -3,86 +3,42 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>AutoParts · Amostras de anúncios</title>
-  <link rel="stylesheet" href="/site.css">
+  <title>AutoParts · Catálogo e anúncios</title>
+  <link rel="stylesheet" href="/site.css?v=20260818-4">
 </head>
 <body>
-  <main>
-    <header>
-      <p class="eyebrow">AUTOPARTS / ANÚNCIOS TÉCNICOS</p>
-      <h1>Gere uma amostra pelo Part Number</h1>
-      <p class="intro">Modelo de anúncio e linha de planilha. Confirme a aplicação no RealOEM antes de publicar.</p>
-    </header>
+  <header class="store-header">
+    <div class="header-main">
+      <a class="brand" href="/" aria-label="AutoParts início"><strong>AUTO</strong><em>PARTS</em><span>CATÁLOGO BMW</span></a>
+      <div class="catalog-search" aria-label="Busca do catálogo"><button type="button" class="category-select">Todos <span>⌄</span></button><label class="search-box"><span class="visually-hidden">Buscar peça</span><input id="header-search" placeholder="Digite o código OEM ou a peça..." autocomplete="off"><button id="header-search-button" type="button" aria-label="Buscar">⌕</button></label></div>
+      <div class="contact"><span class="whatsapp">◔</span><div><strong>WhatsApp</strong><b>(41) 30137-763</b></div></div>
+      <div class="header-icons" aria-label="Atalhos"><button type="button" aria-label="Minha conta">♙</button></div>
+    </div>
+    <nav class="category-nav" aria-label="Categorias"><a href="#catalogo">Início</a><a href="#catalogo">Motores</a><a href="#catalogo">Câmbios</a><a href="#catalogo">Faróis</a><a href="#catalogo">Portas</a><a href="#catalogo">Alternadores</a><a href="#catalogo">Para-choques</a><a href="#catalogo">Módulos</a><a href="#catalogo">Suspensão</a></nav>
+  </header>
 
-    <form id="search-form">
-      <label for="oem">Part Number / código OEM</label>
-      <div class="search-row">
-        <input id="oem" name="oem" value="41007293806" autocomplete="off" required>
-        <button type="submit">Gerar anúncio</button>
-        <button id="ai-button" type="button">IA revisar e sugerir</button>
-        <button id="realoem-button" type="button">Consultar e importar RealOEM</button>
-      </div>
-      <small>Exemplo: 41007293806</small>
+  <main id="catalogo">
+    <section id="veiculos" class="vehicle-browser" aria-labelledby="vehicle-browser-title">
+      <div class="vehicle-browser-heading"><div><p class="eyebrow">SELECIONAR VEICULO</p><h2 id="vehicle-browser-title">Pecas disponiveis por modelo</h2><p>Escolha um veiculo para ver somente as pecas ja cadastradas no banco.</p></div><label class="vehicle-search"><span class="visually-hidden">Buscar veiculo</span><input id="vehicle-search" type="search" placeholder="Ex.: 118i, F20, X5, M340i" autocomplete="off"></label></div>
+      <p id="vehicle-status" class="vehicle-status" role="status"></p>
+      <div id="vehicle-cards" class="vehicle-grid" aria-live="polite"></div>
+      <section id="vehicle-parts" class="vehicle-parts" hidden aria-labelledby="vehicle-parts-title"><div class="section-heading"><div><p class="eyebrow">PECAS NO BANCO</p><h2 id="vehicle-parts-title"></h2></div><button id="close-vehicle-parts" type="button" class="outline-button">Fechar lista</button></div><p id="vehicle-parts-status"></p><label class="vehicle-part-search"><span class="visually-hidden">Buscar peca neste veiculo</span><input id="vehicle-part-search" type="search" placeholder="Buscar por OEM, descricao ou categoria neste veiculo" autocomplete="off"></label><div class="table-wrap"><table><thead><tr><th>COD. OEM</th><th>PECA</th><th>CATEGORIA</th><th>FONTE</th><th>ACAO</th></tr></thead><tbody id="vehicle-parts-rows"></tbody></table></div><div class="vehicle-pagination"><button id="vehicle-page-prev" type="button" class="outline-button">Anterior</button><span id="vehicle-page-info"></span><button id="vehicle-page-next" type="button" class="outline-button">Proxima</button></div></section>
+    </section>
+    <section class="hero"><p class="eyebrow">CATÁLOGO DE PEÇAS BMW</p><h1>Encontre a peça certa pelo código OEM</h1><p>Consulte aplicações, compatibilidades e prepare seu anúncio técnico.</p></section>
+    <form id="search-form" class="oem-search">
+      <label for="oem">Part Number / código OEM</label><div class="search-row"><input id="oem" name="oem" value="41007293806" autocomplete="off" required><button type="submit">Gerar anúncio</button><button id="ai-button" type="button" class="outline-button">IA revisar e sugerir</button><button id="realoem-button" type="button" class="outline-button">Consultar RealOEM</button></div><small>Exemplo: 41007293806</small>
     </form>
-
     <p id="status" role="status"></p>
+    <div id="lookup-options" class="lookup-options" hidden><p>Esta peça não está no cadastro local.</p><button id="bmv-import-button" type="button">Buscar e importar do BMV.parts</button><button id="realoem-missing-button" type="button" class="outline-button">Consultar no RealOEM</button></div>
     <section id="result" hidden>
-      <div class="layout">
-        <article class="car-card">
-          <img id="vehicle-image" alt="BMW Série 1 F20 hatchback">
-          <p>Imagem de referência do veículo · BMW F20</p>
-        </article>
-        <article class="ad-card">
-          <p class="eyebrow">AMOSTRA DE ANÚNCIO</p>
-          <h2 id="title"></h2>
-          <dl>
-            <div><dt>Cód. OEM</dt><dd id="part-number"></dd></div>
-            <div><dt>Valor sugerido</dt><dd id="price"></dd></div>
-            <div><dt>Palavras-chave</dt><dd id="keywords"></dd></div>
-            <div><dt>Aplicações</dt><dd id="applications"></dd></div>
-            <div><dt>Fonte cadastrada</dt><dd id="source"></dd></div>
-          </dl>
-          <a id="realoem" target="_blank" rel="noreferrer">Conferir veículo no RealOEM</a>
-          <p id="verification" class="verification"></p>
-        </article>
-      </div>
-
-      <section id="generated-images" class="sheet" hidden>
-        <h2>Imagens geradas para o anúncio</h2>
-        <div class="generated-grid"><figure><img id="primary-image" alt="Imagem principal do anúncio"><figcaption>Imagem 1 · fundo branco</figcaption></figure><figure><img id="technical-image" alt="Imagem técnica de compatibilidade"><figcaption>Imagem 2 · aplicações</figcaption></figure></div>
-      </section>
-
-      <section class="sheet">
-        <h2>Linha para planilha</h2>
-        <div class="table-wrap"><table>
-          <thead><tr><th>DATA</th><th>COD. OEM</th><th>TÍTULO</th><th>VALOR SUGERIDO</th><th>GRUPO DE PALAVRAS CHAVES</th><th>APLICAÇÕES</th></tr></thead>
-          <tbody id="sheet-row"></tbody>
-        </table></div>
-      </section>
-      <section id="description-panel" class="sheet" hidden>
-        <div class="section-heading"><h2>Descrição do anúncio</h2><button id="copy-description" type="button">Copiar texto</button></div>
-        <textarea id="listing-description" readonly aria-label="Descrição gerada"></textarea>
-        <p id="description-note" class="verification"></p>
-      </section>
-      <div class="send-area">
-        <button id="send-prelisting" type="button">Enviar<br><span>Pré Anúncio · Drive Parts</span></button>
-        <p id="send-status" role="status"></p>
-      </div>
+      <article class="ad-card"><p class="eyebrow">AMOSTRA DE ANÚNCIO</p><h2 id="title"></h2><dl><div><dt>Cód. OEM</dt><dd id="part-number"></dd></div><div><dt>Valor sugerido</dt><dd id="price"></dd></div><div><dt>Palavras-chave</dt><dd id="keywords"></dd></div><div><dt>Aplicações</dt><dd id="applications"></dd></div><div><dt>Fonte cadastrada</dt><dd id="source" class="source-review"></dd></div></dl><a id="realoem" target="_blank" rel="noreferrer">Conferir veículo no RealOEM</a><p id="verification" class="verification"></p></article>
+      <section id="generated-images" class="sheet" hidden><h2>Imagens geradas para o anúncio</h2><div class="generated-grid"><figure><img id="primary-image" alt="Imagem principal do anúncio"><figcaption>Imagem 1 · fundo branco</figcaption></figure><figure><img id="technical-image" alt="Imagem técnica de compatibilidade"><figcaption>Imagem 2 · aplicações</figcaption></figure></div></section>
+      <section class="sheet"><h2>Linha para planilha</h2><div class="table-wrap"><table><thead><tr><th>DATA</th><th>COD. OEM</th><th>TÍTULO</th><th>VALOR SUGERIDO</th><th>GRUPO DE PALAVRAS CHAVES</th><th>APLICAÇÕES</th></tr></thead><tbody id="sheet-row"></tbody></table></div></section>
+      <section id="description-panel" class="sheet" hidden><div class="section-heading"><h2>Descrição do anúncio</h2><button id="copy-description" type="button" class="outline-button">Copiar texto</button></div><textarea id="listing-description" readonly aria-label="Descrição gerada"></textarea><p id="description-note" class="verification"></p></section>
+      <div class="send-area"><button id="send-prelisting" type="button">Enviar<br><span>Pré Anúncio · Drive Parts</span></button><p id="send-status" role="status"></p></div>
     </section>
   </main>
-  <dialog id="realoem-dialog">
-    <form id="realoem-import-form">
-      <div class="section-heading"><h2>Importar dados do RealOEM</h2><button id="close-realoem" type="button">Fechar</button></div>
-      <p>O RealOEM foi aberto em outra janela com o OEM copiado. Pesquise o código, copie os dados e cole abaixo.</p>
-      <label for="realoem-data">Dados copiados do RealOEM</label>
-      <textarea id="realoem-data" required placeholder="Cole aqui a descrição, aplicação, modelos e anos copiados do RealOEM"></textarea>
-      <label for="realoem-description">Descrição da peça (opcional)</label>
-      <input id="realoem-description" placeholder="Ex.: Máquina de vidro dianteira direita">
-      <label for="realoem-applications">Aplicações tratadas (opcional)</label>
-      <textarea id="realoem-applications" placeholder="BMW Série 1 F20/F21 116i, 118i... 2011 a 2019"></textarea>
-      <button type="submit">Importar dados e gerar anúncio</button>
-    </form>
-  </dialog>
-  <script src="/site.js"></script>
+  <dialog id="realoem-dialog"><form id="realoem-import-form"><div class="section-heading"><h2>Importar dados do RealOEM</h2><button id="close-realoem" type="button" class="outline-button">Fechar</button></div><p>O RealOEM foi aberto em outra janela com o OEM copiado. Pesquise o código, copie os dados e cole abaixo.</p><label for="realoem-data">Dados copiados do RealOEM</label><textarea id="realoem-data" required placeholder="Cole descrição, aplicações, modelos e anos"></textarea><label for="realoem-description">Descrição da peça (opcional)</label><input id="realoem-description" placeholder="Ex.: Máquina de vidro dianteira direita"><label for="realoem-applications">Aplicações tratadas (opcional)</label><textarea id="realoem-applications" placeholder="BMW Série 1 F20/F21 116i, 118i... 2011 a 2019"></textarea><button type="submit">Importar dados e gerar anúncio</button></form></dialog>
+  <script src="/site.js?v=20260818-4"></script>
 </body>
 </html>
