@@ -1,5 +1,9 @@
 namespace AutoParts.Api.Services;
 
+/// <summary>
+/// Deterministic fallback for marketplace descriptions. It does not call AI and
+/// deliberately reminds the seller to confirm compatibility by VIN/chassis.
+/// </summary>
 public sealed class TemplateListingDescriptionService : IListingDescriptionService
 {
     public ListingDescriptionResponse Generate(ListingDescriptionInput input)

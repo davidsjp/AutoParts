@@ -77,8 +77,11 @@ public sealed class VehicleCatalogController(
         var query = db.PartCompatibilities.AsNoTracking()
             .Where(compatibility => compatibility.VehicleId == vehicleId)
             .Where(compatibility => !EF.Functions.Like(compatibility.Part.Category, "Ignorar%"))
+            .Where(compatibility => compatibility.Part.Category != "Sem categoria (revisar)")
+            .Where(compatibility => compatibility.Part.Category != "Manuais e documentos")
             // Catalogue instructions and internal notes are not commercial auto parts.
             .Where(compatibility =>
+                !EF.Functions.Like(compatibility.Part.Description, "Template") &&
                 !EF.Functions.Like(compatibility.Part.Description, "Read comments%") &&
                 !EF.Functions.Like(compatibility.Part.Description, "Consulte as observações%") &&
                 !EF.Functions.Like(compatibility.Part.Description, "Operating instructions%") &&
@@ -134,6 +137,13 @@ public sealed class VehicleCatalogController(
                 compatibility.Part.Category,
                 compatibility.Part.Source,
                 compatibility.Part.Applications,
+                compatibility.Part.Side,
+                compatibility.Part.Position,
+                compatibility.Vehicle.Manufacturer,
+                compatibility.Vehicle.Model,
+                compatibility.Vehicle.Chassis,
+                compatibility.Vehicle.Engine,
+                compatibility.Vehicle.TypeCode,
                 compatibility.ProductionStart,
                 compatibility.ProductionEnd))
             .ToListAsync(ct);
@@ -157,13 +167,21 @@ public sealed class VehicleCatalogController(
             }
         }
 
-        var referenceImage = await vehicleImages.FindAsync(chassis, null, ct);
-        if (referenceImage is not null) return referenceImage.ImageUrl;
-
         var chassisCode = chassis?.Trim().ToUpperInvariant();
         if (!string.IsNullOrWhiteSpace(chassisCode) && chassisCode.Length >= 3
             && ReferenceImages.TryGetValue(chassisCode[..3], out var fallbackReferenceImage))
             return fallbackReferenceImage;
+
+        try
+        {
+            var referenceImage = await vehicleImages.FindAsync(chassis, null, ct);
+            if (referenceImage is not null) return referenceImage.ImageUrl;
+        }
+        catch
+        {
+            // A reference image is decorative; the vehicle catalog must stay usable offline.
+        }
+
         return null;
     }
 
@@ -178,7 +196,8 @@ public sealed record VehicleCardResponse(
 
 public sealed record VehicleCatalogPartResponse(
     int Id, string OemPartNumber, string Description, string Category, string Source,
-    string Applications, DateOnly? ProductionStart, DateOnly? ProductionEnd);
+    string Applications, string? Side, string? Position, string Manufacturer, string Model,
+    string? Chassis, string? Engine, string? TypeCode, DateOnly? ProductionStart, DateOnly? ProductionEnd);
 
 public sealed record VehicleCatalogPartsPageResponse(
     int Total, int Skip, int Take, IReadOnlyList<VehicleCatalogPartResponse> Items);

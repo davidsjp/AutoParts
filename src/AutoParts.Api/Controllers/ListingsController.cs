@@ -6,6 +6,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AutoParts.Api.Controllers;
 
+/// <summary>
+/// Listing preview and generation endpoints used to turn catalog data into
+/// marketplace assets. AI output is treated as a suggestion, not as proof of
+/// compatibility.
+/// </summary>
 [ApiController, Route("api/listings")]
 public sealed class ListingsController(AutoPartsDbContext db, IListingGenerationService listingGeneration, IListingImageService listingImages, IListingDescriptionService descriptions) : ControllerBase
 {

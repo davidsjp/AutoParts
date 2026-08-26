@@ -3,6 +3,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AutoParts.Api.Data;
 
+/// <summary>
+/// EF Core boundary for the local catalog. Controllers and services should use
+/// this context for persisted vehicles, parts, compatibility rows and import logs.
+/// </summary>
 public sealed class AutoPartsDbContext(DbContextOptions<AutoPartsDbContext> options) : DbContext(options)
 {
     public DbSet<Vehicle> Vehicles => Set<Vehicle>();
@@ -12,9 +16,14 @@ public sealed class AutoPartsDbContext(DbContextOptions<AutoPartsDbContext> opti
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        // These uniqueness rules protect the commercial catalog from duplicate
+        // VINs, external vehicle identities, OEM numbers and compatibility rows.
         modelBuilder.Entity<Vehicle>().HasIndex(x => x.Vin).IsUnique();
         modelBuilder.Entity<Vehicle>().HasIndex(x => x.SerialNumber).IsUnique();
+        modelBuilder.Entity<Vehicle>().HasIndex(x => new { x.Manufacturer, x.Model, x.Chassis, x.Engine, x.TypeCode });
         modelBuilder.Entity<Part>().HasIndex(x => x.OemPartNumber).IsUnique();
+        modelBuilder.Entity<Part>().HasIndex(x => x.Side);
+        modelBuilder.Entity<Part>().HasIndex(x => x.Position);
         modelBuilder.Entity<PartCompatibility>()
             .HasIndex(x => new { x.PartId, x.VehicleId, x.ProductionStart }).IsUnique();
         modelBuilder.Entity<PartCompatibility>().HasOne(x => x.Part).WithMany(x => x.Compatibilities)

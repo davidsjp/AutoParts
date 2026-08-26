@@ -6,6 +6,11 @@ using AutoParts.Api.Infrastructure;
 
 namespace AutoParts.Api.Services;
 
+/// <summary>
+/// Uses OpenAI Responses API to translate raw external part data into a compact
+/// Brazilian Portuguese catalog record. The prompt forbids invented
+/// compatibility details; callers should still verify important listings.
+/// </summary>
 public sealed class OpenAiPartTranslationService(HttpClient httpClient, IConfiguration configuration) : IPartTranslationService
 {
     public async Task<TranslatedPartData> TranslateAsync(ExternalPart part, CancellationToken ct)

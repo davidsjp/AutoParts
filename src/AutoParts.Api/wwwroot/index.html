@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>AutoParts · Catálogo e anúncios</title>
-  <link rel="stylesheet" href="/site.css?v=20260818-4">
+  <link rel="stylesheet" href="/site.css?v=20260823-2">
 </head>
 <body>
   <header class="store-header">
@@ -14,7 +14,7 @@
       <div class="contact"><span class="whatsapp">◔</span><div><strong>WhatsApp</strong><b>(41) 30137-763</b></div></div>
       <div class="header-icons" aria-label="Atalhos"><button type="button" aria-label="Minha conta">♙</button></div>
     </div>
-    <nav class="category-nav" aria-label="Categorias"><a href="#catalogo">Início</a><a href="#catalogo">Motores</a><a href="#catalogo">Câmbios</a><a href="#catalogo">Faróis</a><a href="#catalogo">Portas</a><a href="#catalogo">Alternadores</a><a href="#catalogo">Para-choques</a><a href="#catalogo">Módulos</a><a href="#catalogo">Suspensão</a></nav>
+    <nav class="category-nav" aria-label="Categorias"><a href="#catalogo">Início</a><a href="#veiculos">Modelos</a><a href="#catalogo">Motores</a><a href="#catalogo">Câmbios</a><a href="#catalogo">Faróis</a><a href="#catalogo">Portas</a><a href="#catalogo">Alternadores</a><a href="#catalogo">Para-choques</a><a href="#catalogo">Módulos</a><a href="#catalogo">Suspensão</a></nav>
   </header>
 
   <main id="catalogo">
@@ -22,7 +22,7 @@
       <div class="vehicle-browser-heading"><div><p class="eyebrow">SELECIONAR VEICULO</p><h2 id="vehicle-browser-title">Pecas disponiveis por modelo</h2><p>Escolha um veiculo para ver somente as pecas ja cadastradas no banco.</p></div><label class="vehicle-search"><span class="visually-hidden">Buscar veiculo</span><input id="vehicle-search" type="search" placeholder="Ex.: 118i, F20, X5, M340i" autocomplete="off"></label></div>
       <p id="vehicle-status" class="vehicle-status" role="status"></p>
       <div id="vehicle-cards" class="vehicle-grid" aria-live="polite"></div>
-      <section id="vehicle-parts" class="vehicle-parts" hidden aria-labelledby="vehicle-parts-title"><div class="section-heading"><div><p class="eyebrow">PECAS NO BANCO</p><h2 id="vehicle-parts-title"></h2></div><button id="close-vehicle-parts" type="button" class="outline-button">Fechar lista</button></div><p id="vehicle-parts-status"></p><label class="vehicle-part-search"><span class="visually-hidden">Buscar peca neste veiculo</span><input id="vehicle-part-search" type="search" placeholder="Buscar por OEM, descricao ou categoria neste veiculo" autocomplete="off"></label><div class="table-wrap"><table><thead><tr><th>COD. OEM</th><th>PECA</th><th>CATEGORIA</th><th>FONTE</th><th>ACAO</th></tr></thead><tbody id="vehicle-parts-rows"></tbody></table></div><div class="vehicle-pagination"><button id="vehicle-page-prev" type="button" class="outline-button">Anterior</button><span id="vehicle-page-info"></span><button id="vehicle-page-next" type="button" class="outline-button">Proxima</button></div></section>
+      <section id="vehicle-parts" class="vehicle-parts" hidden aria-labelledby="vehicle-parts-title"><div class="section-heading"><div><p class="eyebrow">PECAS NO BANCO</p><h2 id="vehicle-parts-title"></h2></div><button id="close-vehicle-parts" type="button" class="outline-button">Fechar lista</button></div><p id="vehicle-parts-status"></p><label class="vehicle-part-search"><span class="visually-hidden">Buscar peca neste veiculo</span><input id="vehicle-part-search" type="search" placeholder="Buscar por OEM, descricao ou categoria neste veiculo" autocomplete="off"></label><div class="table-wrap"><table><thead><tr><th>COD. OEM</th><th>PECA</th><th>CATEGORIA</th><th>LADO/POSICAO</th><th>COMPATIBILIDADE</th><th>FONTE</th><th>ACAO</th></tr></thead><tbody id="vehicle-parts-rows"></tbody></table></div><div class="vehicle-pagination"><button id="vehicle-page-prev" type="button" class="outline-button">Anterior</button><span id="vehicle-page-info"></span><button id="vehicle-page-next" type="button" class="outline-button">Proxima</button></div></section>
     </section>
     <section class="hero"><p class="eyebrow">CATÁLOGO DE PEÇAS BMW</p><h1>Encontre a peça certa pelo código OEM</h1><p>Consulte aplicações, compatibilidades e prepare seu anúncio técnico.</p></section>
     <form id="search-form" class="oem-search">
@@ -39,6 +39,6 @@
     </section>
   </main>
   <dialog id="realoem-dialog"><form id="realoem-import-form"><div class="section-heading"><h2>Importar dados do RealOEM</h2><button id="close-realoem" type="button" class="outline-button">Fechar</button></div><p>O RealOEM foi aberto em outra janela com o OEM copiado. Pesquise o código, copie os dados e cole abaixo.</p><label for="realoem-data">Dados copiados do RealOEM</label><textarea id="realoem-data" required placeholder="Cole descrição, aplicações, modelos e anos"></textarea><label for="realoem-description">Descrição da peça (opcional)</label><input id="realoem-description" placeholder="Ex.: Máquina de vidro dianteira direita"><label for="realoem-applications">Aplicações tratadas (opcional)</label><textarea id="realoem-applications" placeholder="BMW Série 1 F20/F21 116i, 118i... 2011 a 2019"></textarea><button type="submit">Importar dados e gerar anúncio</button></form></dialog>
-  <script src="/site.js?v=20260818-4"></script>
+  <script src="/site.js?v=20260823-2"></script>
 </body>
 </html>

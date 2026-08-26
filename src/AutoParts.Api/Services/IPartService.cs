@@ -9,6 +9,7 @@ public interface IPartService
     Task<IReadOnlyList<CatalogItemResponse>> GetCatalogAsync(CancellationToken ct);
     Task<Part> GetAsync(int id, CancellationToken ct);
     Task<Part> GetByOemAsync(string oem, CancellationToken ct);
+    Task<PartCompatibilityLookupResponse> GetCompatibilityLookupByOemAsync(string oem, CancellationToken ct);
     Task<Part> CreateAsync(PartRequest request, CancellationToken ct);
     Task UpdateAsync(int id, PartRequest request, CancellationToken ct);
     Task DeleteAsync(int id, CancellationToken ct);

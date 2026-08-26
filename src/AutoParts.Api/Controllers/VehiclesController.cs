@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace AutoParts.Api.Controllers;
 
+/// <summary>CRUD endpoints for locally managed vehicles.</summary>
 [ApiController, Route("api/vehicles")]
 public sealed class VehiclesController(IVehicleService service) : ControllerBase
 {

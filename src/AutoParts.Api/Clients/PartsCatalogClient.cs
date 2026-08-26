@@ -3,6 +3,10 @@ using System.Net.Http.Json;
 
 namespace AutoParts.Api.Clients;
 
+/// <summary>
+/// HTTP client for the external BMV.parts API. It keeps endpoint paths and
+/// pagination details out of import services.
+/// </summary>
 public sealed class PartsCatalogClient(HttpClient httpClient) : IPartsCatalogClient
 {
     public async Task<IReadOnlyList<CatalogSearchResult>> SearchAsync(string query, CancellationToken cancellationToken = default)

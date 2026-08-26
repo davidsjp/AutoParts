@@ -5,6 +5,11 @@ using AutoParts.Api.Infrastructure;
 
 namespace AutoParts.Api.Services;
 
+/// <summary>
+/// Produces structured listing suggestions from persisted evidence. The schema
+/// and prompt force a verification note so marketplace publishing remains a
+/// human-confirmed step.
+/// </summary>
 public sealed class OpenAiListingGenerationService(HttpClient httpClient, IConfiguration configuration) : IListingGenerationService
 {
     public async Task<AiListingSuggestion> GenerateAsync(ListingGenerationInput input, CancellationToken ct)

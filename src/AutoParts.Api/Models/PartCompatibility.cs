@@ -3,6 +3,11 @@ using System.Text.Json.Serialization;
 
 namespace AutoParts.Api.Models;
 
+/// <summary>
+/// Join entity that states a part applies to a vehicle for an optional
+/// production interval. Notes keep source-specific hints such as category,
+/// subcategory, serial number or type code.
+/// </summary>
 public sealed class PartCompatibility
 {
     public int Id { get; set; }

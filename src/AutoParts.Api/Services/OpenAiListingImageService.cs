@@ -5,6 +5,11 @@ using AutoParts.Api.Infrastructure;
 
 namespace AutoParts.Api.Services;
 
+/// <summary>
+/// Generates or reuses square listing images. Approved local images and cached
+/// generated files are returned before calling the image API to avoid needless
+/// cost and drift in established listings.
+/// </summary>
 public sealed class OpenAiListingImageService(HttpClient httpClient, IConfiguration configuration, IWebHostEnvironment environment) : IListingImageService
 {
     public async Task<ListingImagesResponse> GenerateAsync(ListingImageRequest input, CancellationToken ct)

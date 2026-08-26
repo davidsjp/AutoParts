@@ -15,6 +15,8 @@ public sealed record PartRequest(
     [Required, MaxLength(100)] string OemPartNumber,
     [Required, MaxLength(500)] string Description,
     [Required, MaxLength(100)] string Category,
+    [MaxLength(50)] string? Side,
+    [MaxLength(50)] string? Position,
     [MaxLength(100)] string? SupersededByPartNumber,
     [Required, MaxLength(100)] string Source,
     DateOnly? CatalogDate = null,
@@ -29,6 +31,46 @@ public sealed record CatalogItemResponse(
     decimal? ValorSugerido,
     string GrupoDePalavrasChaves,
     string Aplicacoes);
+
+public sealed record PartCompatibilityLookupResponse(
+    int PartId,
+    string OemPartNumber,
+    string Description,
+    string Category,
+    string? Side,
+    string? Position,
+    string Source,
+    IReadOnlyList<CompatibleBrandResponse> Brands,
+    IReadOnlyList<CompatibleVehicleResponse> Vehicles);
+
+public sealed record CompatibleBrandResponse(
+    string Manufacturer,
+    IReadOnlyList<CompatibleModelResponse> Models);
+
+public sealed record CompatibleModelResponse(
+    string Model,
+    IReadOnlyList<CompatibleVersionResponse> Versions);
+
+public sealed record CompatibleVersionResponse(
+    string? Chassis,
+    string? Engine,
+    string? TypeCode,
+    string? Market,
+    int? YearStart,
+    int? YearEnd,
+    int VehicleCount);
+
+public sealed record CompatibleVehicleResponse(
+    int VehicleId,
+    string Manufacturer,
+    string Model,
+    string? Chassis,
+    string? Engine,
+    string? TypeCode,
+    string? Market,
+    int? YearStart,
+    int? YearEnd,
+    string? Notes);
 
 public sealed record CompatibilityRequest(
     [Range(1, int.MaxValue)] int VehicleId,

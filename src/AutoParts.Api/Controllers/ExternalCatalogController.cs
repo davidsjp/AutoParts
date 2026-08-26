@@ -4,6 +4,10 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace AutoParts.Api.Controllers;
 
+/// <summary>
+/// Facade for external catalog operations. Import work is delegated to services
+/// so controller actions stay limited to validation and HTTP responses.
+/// </summary>
 [ApiController, Route("api/external-catalog")]
 public sealed class ExternalCatalogController(IExternalCatalogService service) : ControllerBase
 {

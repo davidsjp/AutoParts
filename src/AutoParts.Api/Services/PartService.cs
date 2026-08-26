@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AutoParts.Api.Services;
 
-public sealed class PartService(AutoPartsDbContext db) : IPartService
+public sealed class PartService(AutoPartsDbContext db, IPartMetadataService metadataService) : IPartService
 {
     public async Task<IReadOnlyList<Part>> GetAllAsync(CancellationToken ct) => await db.Parts.AsNoTracking().OrderBy(x => x.OemPartNumber).ToListAsync(ct);
     public async Task<IReadOnlyList<CatalogItemResponse>> GetCatalogAsync(CancellationToken ct) =>
@@ -19,12 +19,82 @@ public sealed class PartService(AutoPartsDbContext db) : IPartService
         var normalized = NormalizeOem(oem);
         return await db.Parts.AsNoTracking().FirstOrDefaultAsync(x => x.OemPartNumber == normalized, ct) ?? throw NotFound();
     }
+    public async Task<PartCompatibilityLookupResponse> GetCompatibilityLookupByOemAsync(string oem, CancellationToken ct)
+    {
+        var normalized = NormalizeOem(oem);
+        var part = await db.Parts.AsNoTracking()
+            .Include(x => x.Compatibilities)
+            .ThenInclude(x => x.Vehicle)
+            .FirstOrDefaultAsync(x => x.OemPartNumber == normalized, ct) ?? throw NotFound();
+
+        var vehicles = part.Compatibilities
+            .Select(compatibility =>
+            {
+                var vehicle = compatibility.Vehicle;
+                return new CompatibleVehicleResponse(
+                    vehicle.Id,
+                    vehicle.Manufacturer,
+                    vehicle.Model,
+                    vehicle.Chassis,
+                    vehicle.Engine,
+                    vehicle.TypeCode,
+                    vehicle.Market,
+                    compatibility.ProductionStart?.Year ?? vehicle.ProductionDate?.Year ?? vehicle.ModelYear,
+                    compatibility.ProductionEnd?.Year,
+                    compatibility.Notes);
+            })
+            .OrderBy(x => x.Manufacturer)
+            .ThenBy(x => x.Model)
+            .ThenBy(x => x.Chassis)
+            .ThenBy(x => x.Engine)
+            .ThenBy(x => x.YearStart)
+            .ToList();
+
+        var brands = vehicles
+            .GroupBy(x => x.Manufacturer)
+            .Select(brand => new CompatibleBrandResponse(
+                brand.Key,
+                brand.GroupBy(x => x.Model)
+                    .Select(model => new CompatibleModelResponse(
+                        model.Key,
+                        model.GroupBy(x => new { x.Chassis, x.Engine, x.TypeCode, x.Market })
+                            .Select(version => new CompatibleVersionResponse(
+                                version.Key.Chassis,
+                                version.Key.Engine,
+                                version.Key.TypeCode,
+                                version.Key.Market,
+                                version.Min(x => x.YearStart),
+                                version.Max(x => x.YearEnd ?? x.YearStart),
+                                version.Select(x => x.VehicleId).Distinct().Count()))
+                            .OrderBy(x => x.Chassis)
+                            .ThenBy(x => x.Engine)
+                            .ThenBy(x => x.YearStart)
+                            .ToList()))
+                    .OrderBy(x => x.Model)
+                    .ToList()))
+            .OrderBy(x => x.Manufacturer)
+            .ToList();
+
+        return new PartCompatibilityLookupResponse(
+            part.Id,
+            part.OemPartNumber,
+            part.Description,
+            part.Category,
+            part.Side,
+            part.Position,
+            part.Source,
+            brands,
+            vehicles);
+    }
     public async Task<Part> CreateAsync(PartRequest r, CancellationToken ct)
     {
         var oem = NormalizeOem(r.OemPartNumber);
         if (await db.Parts.AnyAsync(x => x.OemPartNumber == oem, ct)) throw new ApiException(409, "OEM part number already exists.");
         var now = DateTimeOffset.UtcNow;
-        var entity = new Part { OemPartNumber = oem, Description = r.Description.Trim(), Category = r.Category.Trim(), SupersededByPartNumber = NormalizeOptional(r.SupersededByPartNumber), Source = r.Source.Trim(), CatalogDate = r.CatalogDate, SuggestedValue = r.SuggestedValue, KeywordGroup = r.KeywordGroup?.Trim() ?? string.Empty, Applications = r.Applications?.Trim() ?? string.Empty, CreatedAt = now, UpdatedAt = now };
+        var description = r.Description.Trim();
+        var category = r.Category.Trim();
+        var metadata = metadataService.Extract(description, category);
+        var entity = new Part { OemPartNumber = oem, Description = description, Category = category, Side = NormalizeText(r.Side) ?? metadata.Side, Position = NormalizeText(r.Position) ?? metadata.Position, SupersededByPartNumber = NormalizeOptional(r.SupersededByPartNumber), Source = r.Source.Trim(), CatalogDate = r.CatalogDate, SuggestedValue = r.SuggestedValue, KeywordGroup = r.KeywordGroup?.Trim() ?? string.Empty, Applications = r.Applications?.Trim() ?? string.Empty, CreatedAt = now, UpdatedAt = now };
         db.Parts.Add(entity); await db.SaveChangesAsync(ct); return entity;
     }
     public async Task UpdateAsync(int id, PartRequest r, CancellationToken ct)
@@ -32,7 +102,10 @@ public sealed class PartService(AutoPartsDbContext db) : IPartService
         var entity = await db.Parts.FindAsync([id], ct) ?? throw NotFound();
         var oem = NormalizeOem(r.OemPartNumber);
         if (await db.Parts.AnyAsync(x => x.OemPartNumber == oem && x.Id != id, ct)) throw new ApiException(409, "OEM part number already exists.");
-        entity.OemPartNumber = oem; entity.Description = r.Description.Trim(); entity.Category = r.Category.Trim(); entity.SupersededByPartNumber = NormalizeOptional(r.SupersededByPartNumber); entity.Source = r.Source.Trim(); entity.CatalogDate = r.CatalogDate; entity.SuggestedValue = r.SuggestedValue; entity.KeywordGroup = r.KeywordGroup?.Trim() ?? string.Empty; entity.Applications = r.Applications?.Trim() ?? string.Empty; entity.UpdatedAt = DateTimeOffset.UtcNow;
+        var description = r.Description.Trim();
+        var category = r.Category.Trim();
+        var metadata = metadataService.Extract(description, category);
+        entity.OemPartNumber = oem; entity.Description = description; entity.Category = category; entity.Side = NormalizeText(r.Side) ?? metadata.Side; entity.Position = NormalizeText(r.Position) ?? metadata.Position; entity.SupersededByPartNumber = NormalizeOptional(r.SupersededByPartNumber); entity.Source = r.Source.Trim(); entity.CatalogDate = r.CatalogDate; entity.SuggestedValue = r.SuggestedValue; entity.KeywordGroup = r.KeywordGroup?.Trim() ?? string.Empty; entity.Applications = r.Applications?.Trim() ?? string.Empty; entity.UpdatedAt = DateTimeOffset.UtcNow;
         await db.SaveChangesAsync(ct);
     }
     public async Task DeleteAsync(int id, CancellationToken ct)
@@ -52,6 +125,7 @@ public sealed class PartService(AutoPartsDbContext db) : IPartService
         db.PartCompatibilities.Add(entity); await db.SaveChangesAsync(ct); return entity;
     }
     private static ApiException NotFound() => new(404, "Part not found.");
-    private static string NormalizeOem(string value) => value.Trim().ToUpperInvariant();
+    private static string NormalizeOem(string value) => new string(value.Where(char.IsLetterOrDigit).ToArray()).ToUpperInvariant();
     private static string? NormalizeOptional(string? value) => string.IsNullOrWhiteSpace(value) ? null : NormalizeOem(value);
+    private static string? NormalizeText(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 }

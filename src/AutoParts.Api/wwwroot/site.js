@@ -18,6 +18,15 @@ const vehiclePageSize = 50;
 
 const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[character]);
 const vehicleName = vehicle => [vehicle.manufacturer, vehicle.model].filter(Boolean).join(' ');
+const partSidePosition = part => [part.side, part.position].filter(Boolean).join(' / ') || '-';
+const yearFromDate = value => value ? String(value).slice(0, 4) : '';
+const partCompatibility = part => {
+  const vehicle = [part.manufacturer, part.model, part.chassis, part.engine, part.typeCode].filter(Boolean).join(' ');
+  const start = yearFromDate(part.productionStart);
+  const end = yearFromDate(part.productionEnd);
+  const years = start && end ? `${start} a ${end}` : start ? `desde ${start}` : '';
+  return [vehicle, years].filter(Boolean).join(' | ') || '-';
+};
 const vehicleDetail = vehicle => [vehicle.chassis, vehicle.engine, vehicle.typeCode].filter(Boolean).join(' · ') || 'Modelo BMW';
 const fallbackVehicleImage = '/images/vehicle-card-fallback-v1.png';
 
@@ -69,7 +78,7 @@ async function loadVehicleParts(vehicleId, requestedPage = 0) {
     const pageCount = Math.max(1, Math.ceil(page.total / vehiclePageSize));
     if (currentVehiclePage >= pageCount && page.total > 0) return loadVehicleParts(vehicleId, pageCount - 1);
     vehiclePartsStatus.textContent = `${page.total.toLocaleString('pt-BR')} pecas comerciais disponiveis para este veiculo.`;
-    vehiclePartsRows.innerHTML = page.items.map(part => `<tr><td>${escapeHtml(part.oemPartNumber)}</td><td>${escapeHtml(part.description)}</td><td>${escapeHtml(part.category)}</td><td class="${part.source === 'RealOEM.com' ? 'source-confirmed' : 'source-review'}">${escapeHtml(part.source)}</td><td><button type="button" class="vehicle-part-action" data-oem="${escapeHtml(part.oemPartNumber)}">Gerar anuncio</button></td></tr>`).join('');
+    vehiclePartsRows.innerHTML = page.items.map(part => `<tr><td>${escapeHtml(part.oemPartNumber)}</td><td>${escapeHtml(part.description)}</td><td>${escapeHtml(part.category)}</td><td>${escapeHtml(partSidePosition(part))}</td><td>${escapeHtml(partCompatibility(part))}</td><td class="${part.source === 'RealOEM.com' ? 'source-confirmed' : 'source-review'}">${escapeHtml(part.source)}</td><td><button type="button" class="vehicle-part-action" data-oem="${escapeHtml(part.oemPartNumber)}">Gerar anuncio</button></td></tr>`).join('');
     vehiclePageInfo.textContent = `Pagina ${currentVehiclePage + 1} de ${pageCount}`;
     vehiclePagePrevious.disabled = currentVehiclePage === 0;
     vehiclePageNext.disabled = currentVehiclePage >= pageCount - 1;
@@ -101,6 +110,13 @@ vehiclePartSearch.addEventListener('input', () => {
 vehiclePagePrevious.addEventListener('click', () => { if (currentVehicleId && currentVehiclePage > 0) loadVehicleParts(currentVehicleId, currentVehiclePage - 1); });
 vehiclePageNext.addEventListener('click', () => { if (currentVehicleId) loadVehicleParts(currentVehicleId, currentVehiclePage + 1); });
 document.querySelector('#close-vehicle-parts').addEventListener('click', () => vehicleParts.hidden = true);
+document.querySelector('a[href="#veiculos"]')?.addEventListener('click', event => {
+  event.preventDefault();
+  document.querySelector('#veiculos').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  vehicleSearch.focus({ preventScroll: true });
+  document.querySelector('#veiculos').classList.remove('vehicle-browser-highlight');
+  requestAnimationFrame(() => document.querySelector('#veiculos').classList.add('vehicle-browser-highlight'));
+});
 loadVehicleCards();
 
 const form = document.querySelector('#search-form');

@@ -2,6 +2,10 @@ using System.ComponentModel.DataAnnotations;
 
 namespace AutoParts.Api.Models;
 
+/// <summary>
+/// Operational audit row for external imports. Failed runs keep the error
+/// message so batch/import issues can be diagnosed after the request ends.
+/// </summary>
 public sealed class ImportRun
 {
     public int Id { get; set; }

@@ -3,6 +3,11 @@ using System.Text.Json.Serialization;
 
 namespace AutoParts.Api.Models;
 
+/// <summary>
+/// Local vehicle record used to group compatible parts. BMW catalog metadata
+/// such as serial number, market and type code is optional but important for
+/// imported BMV.parts/RealOEM workflows.
+/// </summary>
 public sealed class Vehicle
 {
     public int Id { get; set; }

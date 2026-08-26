@@ -6,10 +6,16 @@ using Microsoft.EntityFrameworkCore;
 
 namespace AutoParts.Api.Services;
 
+/// <summary>
+/// Coordinates BMV.parts imports, translation/normalization and local database
+/// writes. This service is the main boundary between external catalog data and
+/// the curated local marketplace catalog.
+/// </summary>
 public sealed class ExternalCatalogService(
     IPartsCatalogClient client,
     IPartTranslationService translator,
     MarketPartNameNormalizer marketNameNormalizer,
+    IPartMetadataService partMetadata,
     AutoPartsDbContext db) : IExternalCatalogService
 {
     public Task<IReadOnlyList<CatalogSearchResult>> SearchAsync(string query, CancellationToken ct) =>
@@ -47,11 +53,14 @@ public sealed class ExternalCatalogService(
             if (part is null)
             {
                 var now = DateTimeOffset.UtcNow;
+                var metadata = partMetadata.Extract(translated.Title, translated.Category);
                 part = new Part
                 {
                     OemPartNumber = normalizedOem,
                     Description = translated.Title,
                     Category = translated.Category,
+                    Side = metadata.Side,
+                    Position = metadata.Position,
                     Source = "BMV.parts",
                     KeywordGroup = translated.KeywordGroup,
                     Applications = translated.Applications,
@@ -65,6 +74,9 @@ public sealed class ExternalCatalogService(
             {
                 part.Description = translated.Title;
                 part.Category = translated.Category;
+                var metadata = partMetadata.Extract(translated.Title, translated.Category);
+                part.Side = metadata.Side;
+                part.Position = metadata.Position;
                 part.KeywordGroup = translated.KeywordGroup;
                 part.Applications = translated.Applications;
                 part.UpdatedAt = DateTimeOffset.UtcNow;
@@ -152,6 +164,8 @@ public sealed class ExternalCatalogService(
             var externalCar = await client.GetCarAsync(externalCarId, ct)
                 ?? throw new ApiException(404, "Vehicle not found in BMV.parts.");
             var sourceRows = await client.GetCarPartsAsync(externalCarId, ct);
+            // BMV.parts may contain placeholder or non-commercial rows. Keep only
+            // rows with a usable OEM and description before deduplicating.
             var validParts = sourceRows
                 .Where(x => !string.IsNullOrWhiteSpace(x.PartNumberClean)
                     && NormalizeOem(x.PartNumberClean).Any(char.IsDigit)
@@ -186,6 +200,8 @@ public sealed class ExternalCatalogService(
             var existingParts = await db.Parts.ToDictionaryAsync(x => x.OemPartNumber, StringComparer.OrdinalIgnoreCase, ct);
             var newParts = new List<Part>();
             var now = DateTimeOffset.UtcNow;
+            // Vehicle-level imports apply every imported part to the requested
+            // vehicle and use this application text as the initial listing copy.
             var application = request.CompatibilityEnd.HasValue
                 ? $"BMW {request.Chassis} {request.Model} {request.CompatibilityStart.Year} a {request.CompatibilityEnd.Value.Year}"
                 : $"BMW {request.Chassis} {request.Model} a partir de {request.CompatibilityStart.Year} (fim de produção a confirmar)";
@@ -194,15 +210,17 @@ public sealed class ExternalCatalogService(
                 var oem = NormalizeOem(sourcePart.PartNumberClean);
                 if (existingParts.ContainsKey(oem)) continue;
                 var marketDescription = marketNameNormalizer.Normalize(sourcePart.Description);
+                var category = marketNameNormalizer.NormalizeCategory(sourcePart.CategoryName, marketDescription);
+                if (category == MarketPartNameNormalizer.IgnoredCategory) continue;
+
+                var metadata = partMetadata.Extract(marketDescription, category);
                 var part = new Part
                 {
                     OemPartNumber = oem,
                     Description = marketDescription,
-                    Category = marketNameNormalizer.ShouldIgnoreForCommercialCatalog(marketDescription)
-                        ? "Ignorar - fixadores e mangueiras"
-                        : string.IsNullOrWhiteSpace(sourcePart.CategoryName)
-                        ? "Sem categoria (revisar)"
-                        : sourcePart.CategoryName.Trim(),
+                    Category = category,
+                    Side = metadata.Side,
+                    Position = metadata.Position,
                     Source = "BMV.parts",
                     KeywordGroup = $"{marketDescription} {oem}".ToLowerInvariant(),
                     Applications = application,
@@ -222,7 +240,8 @@ public sealed class ExternalCatalogService(
             var compatibilities = new List<PartCompatibility>();
             foreach (var sourcePart in validParts)
             {
-                var part = existingParts[NormalizeOem(sourcePart.PartNumberClean)];
+                if (!existingParts.TryGetValue(NormalizeOem(sourcePart.PartNumberClean), out var part)) continue;
+                if (part.Category == MarketPartNameNormalizer.IgnoredCategory) continue;
                 if (existingCompatibilityPartIds.Contains(part.Id)) continue;
                 compatibilities.Add(new PartCompatibility
                 {

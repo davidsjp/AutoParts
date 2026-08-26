@@ -88,6 +88,14 @@ namespace AutoParts.Api.Data.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("Position")
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Side")
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Source")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -107,6 +115,10 @@ namespace AutoParts.Api.Data.Migrations
 
                     b.HasIndex("OemPartNumber")
                         .IsUnique();
+
+                    b.HasIndex("Position");
+
+                    b.HasIndex("Side");
 
                     b.ToTable("Parts");
                 });
@@ -193,6 +205,8 @@ namespace AutoParts.Api.Data.Migrations
 
                     b.HasIndex("SerialNumber")
                         .IsUnique();
+
+                    b.HasIndex("Manufacturer", "Model", "Chassis", "Engine", "TypeCode");
 
                     b.HasIndex("Vin")
                         .IsUnique();

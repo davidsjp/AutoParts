@@ -7,6 +7,10 @@ using System.Text;
 
 namespace AutoParts.Api.Controllers;
 
+/// <summary>
+/// CRUD and export endpoints for parts. The catalog endpoints expose a
+/// marketplace-oriented projection instead of raw persistence entities.
+/// </summary>
 [ApiController, Route("api/parts")]
 public sealed class PartsController(IPartService service) : ControllerBase
 {
@@ -28,6 +32,7 @@ public sealed class PartsController(IPartService service) : ControllerBase
     }
     [HttpGet("{id:int}")] public async Task<ActionResult<Part>> Get(int id, CancellationToken ct) => Ok(await service.GetAsync(id, ct));
     [HttpGet("oem/{oemPartNumber}")] public async Task<ActionResult<Part>> GetByOem(string oemPartNumber, CancellationToken ct) => Ok(await service.GetByOemAsync(oemPartNumber, ct));
+    [HttpGet("oem/{oemPartNumber}/compatibility")] public async Task<ActionResult<PartCompatibilityLookupResponse>> GetCompatibilityByOem(string oemPartNumber, CancellationToken ct) => Ok(await service.GetCompatibilityLookupByOemAsync(oemPartNumber, ct));
     [HttpPost] public async Task<ActionResult<Part>> Create(PartRequest request, CancellationToken ct) { var entity = await service.CreateAsync(request, ct); return CreatedAtAction(nameof(Get), new { id = entity.Id }, entity); }
     [HttpPut("{id:int}")] public async Task<IActionResult> Update(int id, PartRequest request, CancellationToken ct) { await service.UpdateAsync(id, request, ct); return NoContent(); }
     [HttpDelete("{id:int}")] public async Task<IActionResult> Delete(int id, CancellationToken ct) { await service.DeleteAsync(id, ct); return NoContent(); }
