@@ -50,12 +50,12 @@ public sealed class VehicleCatalogController(
             .Select(vehicle => new VehicleRow(
                 vehicle.Id, vehicle.Manufacturer, vehicle.Model, vehicle.Chassis, vehicle.Engine,
                 vehicle.ModelYear, vehicle.Market, vehicle.TypeCode, vehicle.SerialNumber,
-                vehicle.Compatibilities.Count))
+                vehicle.MarketRelevance, vehicle.Compatibilities.Count))
             .ToListAsync(ct);
 
         var cards = await Task.WhenAll(vehicles.Select(async vehicle => new VehicleCardResponse(
             vehicle.Id, vehicle.Manufacturer, vehicle.Model, vehicle.Chassis, vehicle.Engine,
-            vehicle.ModelYear, vehicle.Market, vehicle.TypeCode, vehicle.PartCount,
+            vehicle.ModelYear, vehicle.Market, vehicle.TypeCode, vehicle.MarketRelevance, vehicle.PartCount,
             await GetCatalogImageAsync(vehicle.SerialNumber, vehicle.Chassis, ct))));
 
         return Ok(cards);
@@ -187,12 +187,12 @@ public sealed class VehicleCatalogController(
 
     private sealed record VehicleRow(
         int Id, string Manufacturer, string Model, string? Chassis, string? Engine,
-        int ModelYear, string? Market, string? TypeCode, string? SerialNumber, int PartCount);
+        int ModelYear, string? Market, string? TypeCode, string? SerialNumber, int MarketRelevance, int PartCount);
 }
 
 public sealed record VehicleCardResponse(
     int Id, string Manufacturer, string Model, string? Chassis, string? Engine,
-    int ModelYear, string? Market, string? TypeCode, int PartCount, string? ImageUrl);
+    int ModelYear, string? Market, string? TypeCode, int MarketRelevance, int PartCount, string? ImageUrl);
 
 public sealed record VehicleCatalogPartResponse(
     int Id, string OemPartNumber, string Description, string Category, string Source,

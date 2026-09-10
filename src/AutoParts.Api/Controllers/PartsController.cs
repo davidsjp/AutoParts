@@ -15,6 +15,8 @@ namespace AutoParts.Api.Controllers;
 public sealed class PartsController(IPartService service) : ControllerBase
 {
     [HttpGet] public async Task<ActionResult<IReadOnlyList<Part>>> GetAll(CancellationToken ct) => Ok(await service.GetAllAsync(ct));
+    [HttpGet("categories")] public async Task<ActionResult<IReadOnlyList<PartCategoryResponse>>> GetCategories(CancellationToken ct) => Ok(await service.GetCategoriesAsync(ct));
+    [HttpGet("categories/{category}")] public async Task<ActionResult<IReadOnlyList<Part>>> GetByCategory(string category, CancellationToken ct) => Ok(await service.GetByCategoryAsync(category, ct));
     [HttpGet("catalog")] public async Task<ActionResult<IReadOnlyList<CatalogItemResponse>>> GetCatalog(CancellationToken ct) => Ok(await service.GetCatalogAsync(ct));
     [HttpGet("catalog.tsv")]
     public async Task<IActionResult> DownloadCatalog(CancellationToken ct)
@@ -38,6 +40,8 @@ public sealed class PartsController(IPartService service) : ControllerBase
     [HttpDelete("{id:int}")] public async Task<IActionResult> Delete(int id, CancellationToken ct) { await service.DeleteAsync(id, ct); return NoContent(); }
     [HttpGet("{id:int}/compatibilities")] public async Task<ActionResult<IReadOnlyList<PartCompatibility>>> GetCompatibilities(int id, CancellationToken ct) => Ok(await service.GetCompatibilitiesAsync(id, ct));
     [HttpPost("{id:int}/compatibilities")] public async Task<ActionResult<PartCompatibility>> AddCompatibility(int id, CompatibilityRequest request, CancellationToken ct) { var entity = await service.AddCompatibilityAsync(id, request, ct); return CreatedAtAction(nameof(GetCompatibilities), new { id }, entity); }
+    [HttpPut("{id:int}/compatibilities/{compatibilityId:int}")] public async Task<ActionResult<PartCompatibility>> UpdateCompatibility(int id, int compatibilityId, CompatibilityUpdateRequest request, CancellationToken ct) => Ok(await service.UpdateCompatibilityAsync(id, compatibilityId, request, ct));
+    [HttpGet("{id:int}/compatibilities/{compatibilityId:int}/history")] public async Task<ActionResult<IReadOnlyList<CompatibilityReviewLog>>> GetCompatibilityHistory(int id, int compatibilityId, CancellationToken ct) => Ok(await service.GetCompatibilityReviewLogsAsync(id, compatibilityId, ct));
 
     private static string Escape(string? value) => (value ?? string.Empty).Replace('\t', ' ').Replace('\r', ' ').Replace('\n', ' ');
 }

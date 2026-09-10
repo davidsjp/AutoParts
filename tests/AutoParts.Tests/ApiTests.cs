@@ -159,4 +159,76 @@ public sealed class ApiTests(ApiFactory factory) : IClassFixture<ApiFactory>
         Assert.Equal(2018, version.GetProperty("yearEnd").GetInt32());
         Assert.Equal(2, version.GetProperty("vehicleCount").GetInt32());
     }
+
+    [Fact]
+    public async Task Compatibility_CanBeConfirmedAndKeepsReviewHistory()
+    {
+        var vehicleResponse = await _client.PostAsJsonAsync("/api/vehicles", new
+        {
+            manufacturer = "BMW",
+            model = "X4",
+            chassis = "G02",
+            engine = "B48",
+            modelYear = 2021,
+            productionDate = "2021-01-01",
+            vin = "WBA2X41000ABC1234"
+        });
+        vehicleResponse.EnsureSuccessStatusCode();
+        var vehicle = await vehicleResponse.Content.ReadFromJsonAsync<Vehicle>();
+        Assert.NotNull(vehicle);
+
+        var partResponse = await _client.PostAsJsonAsync("/api/parts", new
+        {
+            oemPartNumber = "51 11 9 999 001",
+            description = "Acabamento da porta",
+            category = "Acabamentos",
+            source = "Test"
+        });
+        partResponse.EnsureSuccessStatusCode();
+        var part = await partResponse.Content.ReadFromJsonAsync<Part>();
+        Assert.NotNull(part);
+
+        var compatibilityResponse = await _client.PostAsJsonAsync($"/api/parts/{part.Id}/compatibilities", new
+        {
+            vehicleId = vehicle.Id,
+            productionStart = "2020-01-01",
+            productionEnd = "2023-12-31",
+            relevance = 7,
+            status = "Suggested",
+            confidence = 82,
+            source = "IA catalogo",
+            evidenceText = "OEM encontrado em catalogo externo"
+        });
+        compatibilityResponse.EnsureSuccessStatusCode();
+        using var createdCompatibility = await compatibilityResponse.Content.ReadFromJsonAsync<JsonDocument>();
+        Assert.NotNull(createdCompatibility);
+        var compatibilityId = createdCompatibility.RootElement.GetProperty("id").GetInt32();
+        Assert.Equal("Suggested", createdCompatibility.RootElement.GetProperty("status").GetString());
+
+        var updated = await _client.PutAsJsonAsync($"/api/parts/{part.Id}/compatibilities/{compatibilityId}", new
+        {
+            productionStart = "2020-01-01",
+            productionEnd = "2023-12-31",
+            relevance = 10,
+            status = "Confirmed",
+            confidence = 100,
+            source = "Validacao manual",
+            evidenceText = "Validado pela equipe",
+            confirmedByUserId = "usuario-42"
+        });
+        updated.EnsureSuccessStatusCode();
+
+        using var lookup = await _client.GetFromJsonAsync<JsonDocument>("/api/parts/oem/51119999001/compatibility");
+        Assert.NotNull(lookup);
+        var model = lookup.RootElement.GetProperty("brands")[0].GetProperty("models")[0];
+        Assert.Equal(10, model.GetProperty("relevance").GetInt32());
+        Assert.Equal("Confirmed", model.GetProperty("status").GetString());
+
+        using var historyResponse = await _client.GetAsync($"/api/parts/{part.Id}/compatibilities/{compatibilityId}/history");
+        var historyBody = await historyResponse.Content.ReadAsStringAsync();
+        Assert.True(historyResponse.IsSuccessStatusCode, historyBody);
+        using var history = JsonDocument.Parse(historyBody);
+        Assert.Equal(2, history.RootElement.GetArrayLength());
+        Assert.Equal("Confirmed", history.RootElement[0].GetProperty("action").GetString());
+    }
 }

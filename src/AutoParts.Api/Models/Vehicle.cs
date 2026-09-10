@@ -21,5 +21,8 @@ public sealed class Vehicle
     [MaxLength(7)] public string? SerialNumber { get; set; }
     [MaxLength(20)] public string? Market { get; set; }
     [MaxLength(20)] public string? TypeCode { get; set; }
+    [Range(0, 9)] public int MarketRelevance { get; set; }
+    [MaxLength(500)] public string? MarketRelevanceSource { get; set; }
+    public DateTimeOffset? MarketRelevanceUpdatedAt { get; set; }
     [JsonIgnore] public ICollection<PartCompatibility> Compatibilities { get; set; } = [];
 }

@@ -1,5 +1,6 @@
 using AutoParts.Api.Data;
 using AutoParts.Api.Infrastructure;
+using AutoParts.Api.Models;
 using AutoParts.Api.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -26,16 +27,25 @@ public sealed class ListingsController(AutoPartsDbContext db, IListingGeneration
 
         var vehicles = await db.PartCompatibilities.AsNoTracking()
             .Where(x => x.PartId == part.Id)
+            .Where(x => x.Status == CompatibilityStatus.Confirmed)
+            .OrderByDescending(x => x.Relevance)
             .Include(x => x.Vehicle)
             .Select(x => new ListingVehicleResponse(
                 x.Vehicle.Manufacturer, x.Vehicle.Model, x.Vehicle.Chassis,
                 x.Vehicle.Engine, x.ProductionStart, x.ProductionEnd))
             .ToListAsync(ct);
 
-        var applications = string.IsNullOrWhiteSpace(part.Applications)
-            ? BuildApplications(vehicles)
-            : part.Applications;
+        var applications = vehicles.Count > 0 ? BuildApplications(vehicles) : part.Applications;
         var title = Truncate(part.Description, 60);
+        var priceObservations = await db.PartPriceObservations.AsNoTracking()
+            .Where(x => x.PartId == part.Id)
+            .Select(x => new { x.Amount, x.IsSample })
+            .ToListAsync(ct);
+        var marketPrices = priceObservations.Any(x => !x.IsSample)
+            ? priceObservations.Where(x => !x.IsSample).ToList()
+            : priceObservations;
+        var prices = marketPrices.Count == 0 ? null : new ListingPriceRangeResponse(
+            marketPrices.Min(x => x.Amount), marketPrices.Max(x => x.Amount), marketPrices.Count, marketPrices.All(x => x.IsSample));
 
         return Ok(new ListingSampleResponse(
             part.OemPartNumber,
@@ -46,7 +56,8 @@ public sealed class ListingsController(AutoPartsDbContext db, IListingGeneration
             part.Source,
             "https://upload.wikimedia.org/wikipedia/commons/f/f1/2012_BMW_125i_%28F20%29_5-door_hatchback_%282015-07-03%29_01.jpg",
             "https://www.realoem.com/bmw/enUS/select",
-            vehicles));
+            vehicles,
+            prices));
     }
 
     [HttpPost("{oemPartNumber}/generate")]
@@ -57,14 +68,22 @@ public sealed class ListingsController(AutoPartsDbContext db, IListingGeneration
         if (part is null) return NotFound(new ProblemDetails { Title = "Peça não encontrada." });
 
         var compatibilities = await db.PartCompatibilities.AsNoTracking().Where(x => x.PartId == part.Id)
+            .Where(x => x.Status == CompatibilityStatus.Confirmed)
+            .OrderByDescending(x => x.Relevance)
             .Include(x => x.Vehicle)
             .Select(x => new ListingCompatibilityInput(x.Vehicle.Manufacturer, x.Vehicle.Model, x.Vehicle.Chassis, x.Vehicle.Engine, x.ProductionStart, x.ProductionEnd))
             .ToListAsync(ct);
 
+        var applications = string.Join("; ", compatibilities
+            .Select(x => string.Join(" ", new[] { x.Manufacturer, x.Chassis, x.Model, x.Engine }
+                .Where(value => !string.IsNullOrWhiteSpace(value))))
+            .Distinct());
+        if (string.IsNullOrWhiteSpace(applications)) applications = part.Applications;
+
         try
         {
             return Ok(await listingGeneration.GenerateAsync(new ListingGenerationInput(
-                part.OemPartNumber, part.Description, part.Category, part.Source, part.KeywordGroup, part.Applications, compatibilities), ct));
+                part.OemPartNumber, part.Description, part.Category, part.Source, part.KeywordGroup, applications, compatibilities), ct));
         }
         catch (ApiException exception) when (exception.StatusCode is 429 or 502 or 503)
         {
@@ -72,7 +91,7 @@ public sealed class ListingsController(AutoPartsDbContext db, IListingGeneration
                 Truncate(part.Description, 60),
                 part.SuggestedValue,
                 part.KeywordGroup,
-                part.Applications,
+                applications,
                 "requer_conferencia",
                 "Sugestão local aplicada: a revisão por IA está indisponível. Confirme o OEM e o VIN no RealOEM antes de publicar."));
         }
@@ -90,13 +109,39 @@ public sealed class ListingsController(AutoPartsDbContext db, IListingGeneration
         return Ok(await listingImages.GenerateAsync(new ListingImageRequest(part.OemPartNumber, part.Description, part.Applications, models, regenerate), ct));
     }
 
+    [HttpPost("{oemPartNumber}/images/{channel}")]
+    public async Task<ActionResult<MarketplaceImageResponse>> GenerateMarketplaceImage(string oemPartNumber, string channel, CancellationToken ct)
+    {
+        if (!Enum.TryParse<MarketplaceImageChannel>(channel, true, out var marketplace))
+            return BadRequest(new ProblemDetails { Title = "Canal de imagem invalido.", Detail = "Use MercadoLivre ou Shopee." });
+
+        var normalized = new string(oemPartNumber.Where(char.IsLetterOrDigit).ToArray()).ToUpperInvariant();
+        var part = await db.Parts.AsNoTracking().FirstOrDefaultAsync(x => x.OemPartNumber == normalized, ct);
+        if (part is null) return NotFound(new ProblemDetails { Title = "Peca nao encontrada." });
+        var models = await db.PartCompatibilities.AsNoTracking().Where(x => x.PartId == part.Id)
+            .Where(x => x.Status == CompatibilityStatus.Confirmed)
+            .Include(x => x.Vehicle).Select(x => x.Vehicle.Model).Distinct().ToListAsync(ct);
+        return Ok(await listingImages.GenerateForMarketplaceAsync(
+            new ListingImageRequest(part.OemPartNumber, part.Description, part.Applications, models), marketplace, ct));
+    }
+
+    [HttpGet("{oemPartNumber}/photos")]
+    public async Task<ActionResult<IReadOnlyList<string>>> GetSavedPhotos(string oemPartNumber, CancellationToken ct) =>
+        Ok(await listingImages.GetSavedAsync(oemPartNumber, ct));
+
     [HttpPost("{oemPartNumber}/description")]
     public async Task<ActionResult<ListingDescriptionResponse>> GenerateDescription(string oemPartNumber, CancellationToken ct)
     {
         var normalized = new string(oemPartNumber.Where(char.IsLetterOrDigit).ToArray()).ToUpperInvariant();
         var part = await db.Parts.AsNoTracking().FirstOrDefaultAsync(x => x.OemPartNumber == normalized, ct);
         if (part is null) return NotFound(new ProblemDetails { Title = "Peça não encontrada." });
-        return Ok(descriptions.Generate(new ListingDescriptionInput(part.OemPartNumber, part.Description, part.Category, part.KeywordGroup, part.Applications, part.Source)));
+        var vehicles = await db.PartCompatibilities.AsNoTracking().Where(x => x.PartId == part.Id)
+            .Where(x => x.Status == CompatibilityStatus.Confirmed)
+            .Include(x => x.Vehicle)
+            .Select(x => new ListingVehicleResponse(x.Vehicle.Manufacturer, x.Vehicle.Model, x.Vehicle.Chassis, x.Vehicle.Engine, x.ProductionStart, x.ProductionEnd))
+            .ToListAsync(ct);
+        var applications = vehicles.Count > 0 ? BuildApplications(vehicles) : part.Applications;
+        return Ok(descriptions.Generate(new ListingDescriptionInput(part.OemPartNumber, part.Description, part.Category, part.KeywordGroup, applications, part.Source)));
     }
 
     private static string BuildApplications(IEnumerable<ListingVehicleResponse> vehicles) => string.Join("; ", vehicles
@@ -106,6 +151,7 @@ public sealed class ListingsController(AutoPartsDbContext db, IListingGeneration
 }
 
 public sealed record ListingVehicleResponse(string Manufacturer, string Model, string? Chassis, string? Engine, DateOnly? ProductionStart, DateOnly? ProductionEnd);
+public sealed record ListingPriceRangeResponse(decimal Minimum, decimal Maximum, int ListingCount, bool IsSample);
 
 public sealed record ListingSampleResponse(
     string OemPartNumber,
@@ -116,4 +162,5 @@ public sealed record ListingSampleResponse(
     string Source,
     string VehicleImageUrl,
     string RealoemUrl,
-    IReadOnlyList<ListingVehicleResponse> Compatibilities);
+    IReadOnlyList<ListingVehicleResponse> Compatibilities,
+    ListingPriceRangeResponse? PriceRange);

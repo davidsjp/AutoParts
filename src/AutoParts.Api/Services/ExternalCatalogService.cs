@@ -118,7 +118,13 @@ public sealed class ExternalCatalogService(
                         VehicleId = vehicle.Id,
                         ProductionStart = productionStart,
                         ProductionEnd = ToEndDate(sourceVehicle.YearEnd),
-                        Notes = JoinNotes(sourceVehicle)
+                        Notes = JoinNotes(sourceVehicle),
+                        Relevance = 8,
+                        Status = CompatibilityStatus.Suggested,
+                        Confidence = 90,
+                        Source = "BMV.parts",
+                        CreatedAt = DateTimeOffset.UtcNow,
+                        UpdatedAt = DateTimeOffset.UtcNow
                     });
                     compatibilitiesCreated++;
                 }
@@ -249,7 +255,13 @@ public sealed class ExternalCatalogService(
                     VehicleId = vehicle.Id,
                     ProductionStart = request.CompatibilityStart,
                     ProductionEnd = request.CompatibilityEnd,
-                    Notes = $"Serial {serial}; Type Code {request.TypeCode}; BMV.parts car {externalCar.Id}"
+                    Notes = $"Serial {serial}; Type Code {request.TypeCode}; BMV.parts car {externalCar.Id}",
+                    Relevance = 8,
+                    Status = CompatibilityStatus.Suggested,
+                    Confidence = 90,
+                    Source = "BMV.parts",
+                    CreatedAt = now,
+                    UpdatedAt = now
                 });
             }
             db.PartCompatibilities.AddRange(compatibilities);

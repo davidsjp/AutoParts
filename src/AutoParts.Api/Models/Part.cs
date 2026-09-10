@@ -25,4 +25,5 @@ public sealed class Part
     public DateTimeOffset CreatedAt { get; set; }
     public DateTimeOffset UpdatedAt { get; set; }
     [JsonIgnore] public ICollection<PartCompatibility> Compatibilities { get; set; } = [];
+    [JsonIgnore] public ICollection<PartPriceObservation> PriceObservations { get; set; } = [];
 }

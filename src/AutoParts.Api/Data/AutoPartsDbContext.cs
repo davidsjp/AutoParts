@@ -12,6 +12,8 @@ public sealed class AutoPartsDbContext(DbContextOptions<AutoPartsDbContext> opti
     public DbSet<Vehicle> Vehicles => Set<Vehicle>();
     public DbSet<Part> Parts => Set<Part>();
     public DbSet<PartCompatibility> PartCompatibilities => Set<PartCompatibility>();
+    public DbSet<CompatibilityReviewLog> CompatibilityReviewLogs => Set<CompatibilityReviewLog>();
+    public DbSet<PartPriceObservation> PartPriceObservations => Set<PartPriceObservation>();
     public DbSet<ImportRun> ImportRuns => Set<ImportRun>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -26,9 +28,17 @@ public sealed class AutoPartsDbContext(DbContextOptions<AutoPartsDbContext> opti
         modelBuilder.Entity<Part>().HasIndex(x => x.Position);
         modelBuilder.Entity<PartCompatibility>()
             .HasIndex(x => new { x.PartId, x.VehicleId, x.ProductionStart }).IsUnique();
+        modelBuilder.Entity<PartCompatibility>()
+            .HasIndex(x => new { x.PartId, x.Status, x.Relevance });
         modelBuilder.Entity<PartCompatibility>().HasOne(x => x.Part).WithMany(x => x.Compatibilities)
             .HasForeignKey(x => x.PartId).OnDelete(DeleteBehavior.Cascade);
         modelBuilder.Entity<PartCompatibility>().HasOne(x => x.Vehicle).WithMany(x => x.Compatibilities)
             .HasForeignKey(x => x.VehicleId).OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<CompatibilityReviewLog>().HasIndex(x => new { x.PartCompatibilityId, x.PerformedAt });
+        modelBuilder.Entity<CompatibilityReviewLog>().HasOne(x => x.PartCompatibility).WithMany(x => x.ReviewLogs)
+            .HasForeignKey(x => x.PartCompatibilityId).OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<PartPriceObservation>().HasIndex(x => new { x.PartId, x.ObservedAt });
+        modelBuilder.Entity<PartPriceObservation>().HasOne(x => x.Part).WithMany(x => x.PriceObservations)
+            .HasForeignKey(x => x.PartId).OnDelete(DeleteBehavior.Cascade);
     }
 }
