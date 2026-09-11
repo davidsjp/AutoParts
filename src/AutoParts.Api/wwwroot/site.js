@@ -28,17 +28,35 @@ function activateView(viewId) {
 
 document.querySelectorAll('.header-tab').forEach(tab => tab.addEventListener('click', () => activateView(tab.dataset.viewTarget)));
 
+function setWorkflowStage(stage) {
+  const stages = ['part', 'compatibility', 'listing'];
+  const activeIndex = stages.indexOf(stage);
+  document.querySelectorAll('[data-workflow-stage]').forEach(element => {
+    const index = stages.indexOf(element.dataset.workflowStage);
+    element.classList.toggle('is-active', index === activeIndex);
+    element.classList.toggle('is-complete', index < activeIndex);
+  });
+}
+
 function renderListing(data) {
   $('#title').textContent = data.title || '-';
   $('#part-number').textContent = data.oemPartNumber || '-';
   $('#price').textContent = data.suggestedValue == null ? '[Preencher]' : money.format(data.suggestedValue);
   renderPriceRange(data.priceRange);
   $('#keywords').textContent = data.keywordGroup || '-';
-  $('#applications').textContent = data.applications || '-';
+  renderApplications(data.applications);
   $('#source').textContent = data.source || '-';
   $('#source').className = data.source === 'RealOEM.com' ? 'source-confirmed' : 'source-review';
   $('#realoem').href = data.realoemUrl || 'https://www.realoem.com/bmw/enUS/select';
   $('#sheet-row').innerHTML = `<tr><td>${escapeHtml(data.oemPartNumber)}</td><td>${escapeHtml(data.title)}</td><td>${data.suggestedValue == null ? '[Preencher]' : escapeHtml(money.format(data.suggestedValue))}</td><td>${escapeHtml(data.applications)}</td></tr>`;
+  setWorkflowStage('part');
+}
+
+function renderApplications(value) {
+  const items = String(value || '').split(';').map(item => item.trim()).filter(Boolean);
+  $('#applications').innerHTML = items.length
+    ? items.map(item => `<span class="application-tag">${escapeHtml(item)}</span>`).join('')
+    : '<span class="application-tag">Nenhuma aplicacao confirmada.</span>';
 }
 
 function renderPriceRange(range) {
@@ -59,7 +77,10 @@ async function loadCompatibilityEditor(oem) {
   activeCompatibilityModel = undefined;
   compatibilitySaved = false;
   $('#compatibility-editor').hidden = currentCompatibilities.length === 0;
-  if (currentCompatibilities.length) renderCompatibilityEditor();
+  if (currentCompatibilities.length) {
+    renderCompatibilityEditor();
+    setWorkflowStage('compatibility');
+  }
 }
 
 function compatibilityLabel(item) {
@@ -86,7 +107,7 @@ function renderCompatibilityEditor() {
     const selected = items.some(item => item.selected);
     const allSelected = items.every(item => item.selected);
     const maxRelevance = Math.max(...items.map(item => item.relevance));
-    return `<article class="model-selection-card"><button type="button" class="model-tab ${label === activeCompatibilityModel ? 'is-active' : ''}" data-compatibility-model="${escapeHtml(label)}"><strong>${escapeHtml(label)}</strong><small>${items.length} aplicacao(oes) | relevancia ${maxRelevance} | ${selected ? 'selecionado' : 'nao selecionado'}</small></button><label><input type="checkbox" data-model-selection="${escapeHtml(label)}" ${allSelected ? 'checked' : ''}> Usar todas as versoes deste modelo</label></article>`;
+    return `<article class="model-selection-card"><button type="button" class="model-tab ${label === activeCompatibilityModel ? 'is-active' : ''}" data-compatibility-model="${escapeHtml(label)}"><strong>${escapeHtml(label)}</strong></button><div class="model-card-meta"><span>${items.length} vers${items.length === 1 ? 'ao' : 'oes'}</span><span class="model-relevance">Relevancia ${maxRelevance}/10</span></div><label><input type="checkbox" data-model-selection="${escapeHtml(label)}" ${allSelected ? 'checked' : ''}> ${allSelected ? 'Incluido no anuncio' : 'Incluir no anuncio'}</label></article>`;
   }).join('')}</div>`;
   const details = models.get(activeCompatibilityModel) || [];
   $('#compatibility-details').innerHTML = `<p class="compatibility-instruction">Selecione as combinacoes de chassi, motor e ano compativeis para <strong>${escapeHtml(activeCompatibilityModel || '')}</strong>.</p><div class="table-wrap"><table><thead><tr><th>USAR</th><th>CHASSI</th><th>MOTOR</th><th>ANO</th><th>PRIORIDADE</th></tr></thead><tbody>${details.map(item => `<tr><td><input type="checkbox" data-compatibility-id="${item.id}" ${item.selected ? 'checked' : ''}></td><td>${escapeHtml(item.vehicle.chassis || '-')}</td><td>${escapeHtml(item.vehicle.engine || '-')}</td><td>${escapeHtml([year(item.productionStart), year(item.productionEnd)].filter(Boolean).join(' a ') || String(item.vehicle.modelYear || '-'))}</td><td>${item.relevance}</td></tr>`).join('')}</tbody></table></div>`;
@@ -171,7 +192,7 @@ async function generateAd() {
     $('#price').textContent = data.suggestedValue == null ? '[Preencher]' : money.format(data.suggestedValue);
     renderPriceRange(currentListing.priceRange);
     $('#keywords').textContent = data.keywordGroup || '-';
-    $('#applications').textContent = data.applications || '-';
+    renderApplications(data.applications);
     $('#sheet-row').innerHTML = `<tr><td>${escapeHtml(currentListing.oemPartNumber)}</td><td>${escapeHtml(data.title)}</td><td>${data.suggestedValue == null ? '[Preencher]' : escapeHtml(money.format(data.suggestedValue))}</td><td>${escapeHtml(data.applications)}</td></tr>`;
     $('#ad-title').textContent = data.title || '-';
     $('#ad-models').textContent = currentCompatibilities.filter(item => item.selected).map(compatibilityLabel).join('; ') || '-';
@@ -179,6 +200,7 @@ async function generateAd() {
     await loadSavedPhotos(currentListing.oemPartNumber);
     $('#generated-ad-panel').hidden = false;
     selectAdTab('summary');
+    setWorkflowStage('listing');
     $('#generated-ad-panel').scrollIntoView({ behavior: 'smooth', block: 'start' });
     $('#status').textContent = 'Anuncio gerado com as compatibilidades selecionadas.';
   } catch (error) { $('#status').textContent = error.message; }
